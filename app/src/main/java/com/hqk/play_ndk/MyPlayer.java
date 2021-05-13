@@ -1,5 +1,6 @@
 package com.hqk.play_ndk;
 
+import android.content.Context;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -10,6 +11,7 @@ public class MyPlayer implements SurfaceHolder.Callback {
 
     private String dataSource;//rtmp网络直播流，本地流
 
+    private OnPreparedListener onPreparedListener;
     private SurfaceHolder surfaceHolder;
 
     static {
@@ -32,7 +34,7 @@ public class MyPlayer implements SurfaceHolder.Callback {
             surfaceHolder.removeCallback(this);
         }
         surfaceHolder = surfaceView.getHolder();
-//        surfaceHolder.addCallback(this);
+        surfaceHolder.addCallback(this);
     }
 
     @Override
@@ -46,6 +48,10 @@ public class MyPlayer implements SurfaceHolder.Callback {
 
     @Override
     public void surfaceDestroyed(@NonNull SurfaceHolder surfaceHolder) {
+    }
+
+    public void setOnPreparedListener(OnPreparedListener onPreparedListener) {
+        this.onPreparedListener = onPreparedListener;
     }
 
     /**
@@ -86,5 +92,39 @@ public class MyPlayer implements SurfaceHolder.Callback {
 
     public native String getFFmpegVersion();
 
+    /**
+     * 给native 调用的函数
+     */
+
+    public void onPrepared() {
+        if (onPreparedListener != null) {
+            this.onPreparedListener.onlPrepared();
+        }
+
+    }
+
+    public void onError(int errorCode) {
+        if (onPreparedListener != null) {
+            String errorText = null;
+            try {
+                Constants.ErrorCode code = Constants.ErrorCode.codeOf(errorCode);
+                errorText = code.getValue();
+            } catch (Exception e) {
+                e.printStackTrace();
+                errorText = e.getMessage();
+            }
+            this.onPreparedListener.onError(errorText);
+        }
+    }
+
+
+    //通知 activity的接口
+    interface OnPreparedListener {
+
+        void onlPrepared();
+
+        void onError(String errorText);
+
+    }
 
 }
